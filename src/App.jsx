@@ -35,12 +35,13 @@ import {
 // --- 1. PASTE YOUR FIREBASE CONFIG HERE ---
 // Go to Firebase Console -> Project Settings -> General -> Scroll down to "Your apps"
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY_HERE",
-  authDomain: "PASTE_YOUR_AUTH_DOMAIN_HERE",
-  projectId: "PASTE_YOUR_PROJECT_ID_HERE",
-  storageBucket: "PASTE_YOUR_STORAGE_BUCKET_HERE",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID_HERE",
-  appId: "PASTE_YOUR_APP_ID_HERE"
+  apiKey: "AIzaSyAPNMDf2F1WQUK8Hmupca3OgPUTrmOAgFg",
+  authDomain: "job-notes---dream-computers.firebaseapp.com",
+  projectId: "job-notes---dream-computers",
+  storageBucket: "job-notes---dream-computers.firebasestorage.app",
+  messagingSenderId: "643298237132",
+  appId: "1:643298237132:web:336205ab540fc810214069"
+  measurementId: "G-30HW6H59WV"
 };
 // ------------------------------------------
 
