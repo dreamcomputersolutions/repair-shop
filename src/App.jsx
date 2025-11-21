@@ -41,7 +41,6 @@ const firebaseConfig = {
   storageBucket: "job-notes---dream-computers.firebasestorage.app",
   messagingSenderId: "643298237132",
   appId: "1:643298237132:web:336205ab540fc810214069"
-  measurementId: "G-30HW6H59WV"
 };
 // ------------------------------------------
 
