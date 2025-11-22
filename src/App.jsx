@@ -62,10 +62,10 @@ const INITIAL_FORM = {
   phone: '',
   email: '',
   deviceType: 'Laptop',
-  deviceBrand: '', // NEW FIELD
+  deviceBrand: '', 
   deviceModel: '',
   serialNumber: '',
-  receivedItems: '', // NEW FIELD
+  receivedItems: '', 
   problem: '',
   estimatedCost: '',
   notes: '',
@@ -78,7 +78,6 @@ const generateEmailContent = (job, type) => {
     ? `Repair Job Received - #${job.jobId} - Dream Computer Solutions`
     : `Update on Repair Job #${job.jobId} - ${job.status}`;
 
-  // NEW: Added Brand and Received Items to email body
   const body = type === 'new'
     ? `Dear ${job.customerName},%0D%0A%0D%0AWe have received your device for repair.%0D%0A%0D%0AJob ID: ${job.jobId}%0D%0ADevice: ${job.deviceBrand} ${job.deviceModel} (${job.deviceType})%0D%0ASerial: ${job.serialNumber}%0D%0AItems Received: ${job.receivedItems || 'Device only'}%0D%0AProblem: ${job.problem}%0D%0AEstimated Cost: ${job.estimatedCost}%0D%0A%0D%0AWe will notify you when the repair is complete.%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions%0D%0AWe build your dream.%0D%0A94 76 987 3327`
     : `Dear ${job.customerName},%0D%0A%0D%0AThe status of your repair job (#${job.jobId}) has changed to: ${job.status}.%0D%0A%0D%0ADevice: ${job.deviceBrand} ${job.deviceModel}%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions`;
@@ -220,7 +219,6 @@ export default function App() {
   };
 
   const handleExportCSV = () => {
-    // NEW: Added Brand and Received Items to CSV headers
     const headers = ["Job ID", "Customer", "Phone", "Email", "Device Type", "Brand", "Model", "Serial", "Received Items", "Problem", "Status", "Cost", "Date"];
     const rows = jobs.map(j => [
       j.jobId, 
@@ -251,20 +249,47 @@ export default function App() {
   const handlePrint = (job) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return alert("Please allow popups to print.");
+    
+    // UPDATED HTML FOR DISCLAIMER AND SIGNATURES
     const html = `
       <html>
         <head>
           <title>Receipt - ${job.jobId}</title>
           <style>
-            body { font-family: 'Courier New', monospace; padding: 20px; max-width: 600px; margin: 0 auto; }
+            body { font-family: 'Courier New', monospace; padding: 20px; max-width: 600px; margin: 0 auto; font-size: 14px; }
             .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 20px; margin-bottom: 20px; }
             .logo { max-height: 80px; display: block; margin: 0 auto 10px; }
-            .title { font-size: 24px; font-weight: bold; }
-            .motto { font-style: italic; margin: 5px 0; }
+            .title { font-size: 20px; font-weight: bold; text-transform: uppercase; }
+            .motto { font-style: italic; margin: 5px 0; font-size: 12px; }
             .contacts { font-size: 12px; margin-top: 5px; }
-            .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .label { font-weight: bold; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; padding-top: 10px; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; padding-top: 10px; }
+            
+            /* NEW STYLES FOR DISCLAIMER & SIGNATURES */
+            .disclaimer-box { 
+              margin-top: 20px; 
+              padding: 10px; 
+              border: 1px solid #000; 
+              font-weight: bold; 
+              text-align: center;
+              font-size: 12px;
+              background: #f9f9f9;
+            }
+            .signatures {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 50px;
+              padding-top: 10px;
+            }
+            .sig-block {
+              text-align: center;
+              width: 40%;
+            }
+            .sig-line {
+              border-top: 1px solid #000;
+              margin-bottom: 5px;
+            }
           </style>
         </head>
         <body>
@@ -275,19 +300,42 @@ export default function App() {
             <div class="contacts">94 76 987 3327 | +94 474 490 022</div>
             <h3>Repair Receipt</h3>
           </div>
+          
           <div class="row"><span class="label">Job ID:</span> <span>${job.jobId}</span></div>
           <div class="row"><span class="label">Date:</span> <span>${job.receivedDate}</span></div>
           <div class="row"><span class="label">Customer:</span> <span>${job.customerName}</span></div>
           <div class="row"><span class="label">Contact:</span> <span>${job.phone}</span></div>
+          
           <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;" />
+          
           <div class="row"><span class="label">Device:</span> <span>${job.deviceType}</span></div>
           <div class="row"><span class="label">Brand/Model:</span> <span>${job.deviceBrand} ${job.deviceModel}</span></div>
           <div class="row"><span class="label">Serial:</span> <span>${job.serialNumber}</span></div>
           <div class="row"><span class="label">Items Rec:</span> <span>${job.receivedItems || '-'}</span></div>
           <div class="row"><span class="label">Problem:</span> <span>${job.problem}</span></div>
           <div class="row"><span class="label">Est. Cost:</span> <span>${job.estimatedCost}</span></div>
+          
           <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;" />
+          
           <div class="row"><span class="label">Current Status:</span> <span>${job.status}</span></div>
+
+          <!-- DISCLAIMER -->
+          <div class="disclaimer-box">
+            IMPORTANT: We are not responsible for any items not collected within 30 days of completion notification.
+          </div>
+
+          <!-- SIGNATURES -->
+          <div class="signatures">
+            <div class="sig-block">
+              <div class="sig-line"></div>
+              <div>Customer Signature</div>
+            </div>
+            <div class="sig-block">
+              <div class="sig-line"></div>
+              <div>Authorized Signature</div>
+            </div>
+          </div>
+
           <div class="footer"><p>Thank you for trusting Dream Computer Solutions!</p></div>
         </body>
       </html>
