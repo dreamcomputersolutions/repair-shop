@@ -370,7 +370,7 @@ export default function App() {
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-bold text-indigo-900">Dream Computer Solutions</h1>
             <p className="text-indigo-600 font-medium italic">We build your dream.</p>
-            <p className="text-sm text-slate-500 mt-1">94 76 987 3327 | +94 474 490 022</p>
+            <p className="text-sm text-slate-600 mt-1">+94 76 987 3327 | +94 474 490 022</p>
           </div>
         </div>
         
