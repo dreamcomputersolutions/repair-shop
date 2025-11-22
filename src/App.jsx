@@ -62,8 +62,10 @@ const INITIAL_FORM = {
   phone: '',
   email: '',
   deviceType: 'Laptop',
+  deviceBrand: '', // NEW FIELD
   deviceModel: '',
   serialNumber: '',
+  receivedItems: '', // NEW FIELD
   problem: '',
   estimatedCost: '',
   notes: '',
@@ -76,9 +78,10 @@ const generateEmailContent = (job, type) => {
     ? `Repair Job Received - #${job.jobId} - Dream Computer Solutions`
     : `Update on Repair Job #${job.jobId} - ${job.status}`;
 
+  // NEW: Added Brand and Received Items to email body
   const body = type === 'new'
-    ? `Dear ${job.customerName},%0D%0A%0D%0AWe have received your device for repair.%0D%0A%0D%0AJob ID: ${job.jobId}%0D%0ADevice: ${job.deviceModel} (${job.deviceType})%0D%0ASerial: ${job.serialNumber}%0D%0AProblem: ${job.problem}%0D%0AEstimated Cost: ${job.estimatedCost}%0D%0A%0D%0AWe will notify you when the repair is complete.%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions%0D%0AWe build your dream.%0D%0A94 76 987 3327`
-    : `Dear ${job.customerName},%0D%0A%0D%0AThe status of your repair job (#${job.jobId}) has changed to: ${job.status}.%0D%0A%0D%0ADevice: ${job.deviceModel}%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions`;
+    ? `Dear ${job.customerName},%0D%0A%0D%0AWe have received your device for repair.%0D%0A%0D%0AJob ID: ${job.jobId}%0D%0ADevice: ${job.deviceBrand} ${job.deviceModel} (${job.deviceType})%0D%0ASerial: ${job.serialNumber}%0D%0AItems Received: ${job.receivedItems || 'Device only'}%0D%0AProblem: ${job.problem}%0D%0AEstimated Cost: ${job.estimatedCost}%0D%0A%0D%0AWe will notify you when the repair is complete.%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions%0D%0AWe build your dream.%0D%0A94 76 987 3327`
+    : `Dear ${job.customerName},%0D%0A%0D%0AThe status of your repair job (#${job.jobId}) has changed to: ${job.status}.%0D%0A%0D%0ADevice: ${job.deviceBrand} ${job.deviceModel}%0D%0A%0D%0AThank you,%0D%0ADream Computer Solutions`;
 
   return { subject, body };
 };
@@ -157,7 +160,6 @@ export default function App() {
   const generateJobId = () => {
     const date = new Date();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    // UPDATED: Format DCS-xxxx
     return `DCS-${date.getFullYear()}${random}`;
   };
 
@@ -218,10 +220,22 @@ export default function App() {
   };
 
   const handleExportCSV = () => {
-    // This downloads ALL jobs currently in the 'jobs' state, which contains the full history from the database.
-    const headers = ["Job ID", "Customer", "Phone", "Email", "Device", "Model", "Serial", "Problem", "Status", "Cost", "Date"];
+    // NEW: Added Brand and Received Items to CSV headers
+    const headers = ["Job ID", "Customer", "Phone", "Email", "Device Type", "Brand", "Model", "Serial", "Received Items", "Problem", "Status", "Cost", "Date"];
     const rows = jobs.map(j => [
-      j.jobId, `"${j.customerName}"`, j.phone, j.email, j.deviceType, j.deviceModel, j.serialNumber, `"${j.problem}"`, j.status, j.estimatedCost, j.receivedDate
+      j.jobId, 
+      `"${j.customerName}"`, 
+      j.phone, 
+      j.email, 
+      j.deviceType, 
+      `"${j.deviceBrand || ''}"`, 
+      `"${j.deviceModel}"`, 
+      j.serialNumber,
+      `"${j.receivedItems || ''}"`,
+      `"${j.problem}"`, 
+      j.status, 
+      j.estimatedCost, 
+      j.receivedDate
     ]);
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -266,8 +280,10 @@ export default function App() {
           <div class="row"><span class="label">Customer:</span> <span>${job.customerName}</span></div>
           <div class="row"><span class="label">Contact:</span> <span>${job.phone}</span></div>
           <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;" />
-          <div class="row"><span class="label">Device:</span> <span>${job.deviceType} - ${job.deviceModel}</span></div>
+          <div class="row"><span class="label">Device:</span> <span>${job.deviceType}</span></div>
+          <div class="row"><span class="label">Brand/Model:</span> <span>${job.deviceBrand} ${job.deviceModel}</span></div>
           <div class="row"><span class="label">Serial:</span> <span>${job.serialNumber}</span></div>
+          <div class="row"><span class="label">Items Rec:</span> <span>${job.receivedItems || '-'}</span></div>
           <div class="row"><span class="label">Problem:</span> <span>${job.problem}</span></div>
           <div class="row"><span class="label">Est. Cost:</span> <span>${job.estimatedCost}</span></div>
           <hr style="border: 0; border-top: 1px dashed #000; margin: 15px 0;" />
@@ -360,9 +376,11 @@ export default function App() {
                      <option>Printer</option>
                      <option>Other</option>
                    </select>
-                   <input required name="deviceModel" placeholder="Model Name" value={formData.deviceModel} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                   <input required name="deviceBrand" placeholder="Brand (e.g. Dell)" value={formData.deviceBrand} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 </div>
+                <input required name="deviceModel" placeholder="Model Name" value={formData.deviceModel} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 <input required name="serialNumber" placeholder="Serial Number / MAC ID" value={formData.serialNumber} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                <input name="receivedItems" placeholder="Items Received (Charger, Bag...)" value={formData.receivedItems} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 <textarea required name="problem" placeholder="Problem Description" value={formData.problem} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none h-20 resize-none placeholder-slate-400" />
               </div>
 
@@ -455,7 +473,7 @@ export default function App() {
                          <div className="flex items-center gap-2 mb-1">
                             {job.deviceType === 'Laptop' ? <Monitor size={14} /> : 
                              job.deviceType === 'Phone' ? <Smartphone size={14} /> : <Cpu size={14} />}
-                            <span className="text-sm font-medium">{job.deviceModel}</span>
+                            <span className="text-sm font-medium">{job.deviceBrand} {job.deviceModel}</span>
                          </div>
                          <div className="text-xs text-slate-500 font-mono mb-1">SN: {job.serialNumber}</div>
                          <p className="text-xs text-slate-600 italic bg-slate-100 p-1 rounded inline-block max-w-xs truncate">
