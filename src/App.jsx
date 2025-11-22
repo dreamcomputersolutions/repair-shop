@@ -10,7 +10,8 @@ import {
   Monitor, 
   Cpu, 
   Trash2, 
-  RefreshCw 
+  RefreshCw,
+  Wrench
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -32,7 +33,7 @@ import {
 } from 'firebase/auth';
 
 // --- FIREBASE CONFIGURATION ---
-// Ensure this config matches your Firebase Console settings exactly
+// ⚠️ IMPORTANT: REPLACE THESE WITH YOUR ACTUAL KEYS
 const firebaseConfig = {
   apiKey: "AIzaSyAPNMDf2F1WQUK8Hmupca3OgPUTrmOAgFg",
   authDomain: "job-notes---dream-computers.firebaseapp.com",
@@ -40,7 +41,6 @@ const firebaseConfig = {
   storageBucket: "job-notes---dream-computers.firebasestorage.app",
   messagingSenderId: "643298237132",
   appId: "1:643298237132:web:336205ab540fc810214069",
-
 };
 
 // Initialize Firebase
@@ -96,12 +96,13 @@ const handleEmailSend = async (job, type) => {
       })
     });
     if (response.ok) {
-      alert('Email sent via server!');
+      alert('Email sent automatically via server!');
       return;
     }
     throw new Error('Server API unavailable');
   } catch (error) {
     console.log("API unavailable, falling back to mailto");
+    // Fallback ONLY if automatic sending fails
     window.location.href = `mailto:${job.email}?subject=${subject}&body=${body}`;
   }
 };
@@ -139,7 +140,6 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    // UPDATED PATH: Using 'public/data' so data persists across different sessions
     const jobsRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
 
@@ -157,7 +157,8 @@ export default function App() {
   const generateJobId = () => {
     const date = new Date();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `JOB-${date.getFullYear()}${random}`;
+    // UPDATED: Format DCS-xxxx
+    return `DCS-${date.getFullYear()}${random}`;
   };
 
   const handleInputChange = (e) => {
@@ -175,7 +176,6 @@ export default function App() {
       receivedDate: new Date().toISOString().split('T')[0]
     };
     try {
-      // UPDATED PATH: Saving to public data
       await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs'), newJob);
       if (newJob.email) handleEmailSend(newJob, 'new');
       setFormData(INITIAL_FORM);
@@ -194,7 +194,6 @@ export default function App() {
     const newStatus = pendingUpdates[job.id];
     if (!newStatus || newStatus === job.status) return;
     try {
-      // UPDATED PATH: Updating in public data
       const jobRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs', job.id);
       await updateDoc(jobRef, { status: newStatus });
       setPendingUpdates(prev => {
@@ -212,7 +211,6 @@ export default function App() {
   const handleDelete = async (jobId) => {
     if(!window.confirm("Are you sure you want to delete this job record?")) return;
     try {
-      // UPDATED PATH: Deleting from public data
       await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs', jobId));
     } catch(err) {
       console.error(err);
@@ -220,6 +218,7 @@ export default function App() {
   };
 
   const handleExportCSV = () => {
+    // This downloads ALL jobs currently in the 'jobs' state, which contains the full history from the database.
     const headers = ["Job ID", "Customer", "Phone", "Email", "Device", "Model", "Serial", "Problem", "Status", "Cost", "Date"];
     const rows = jobs.map(j => [
       j.jobId, `"${j.customerName}"`, j.phone, j.email, j.deviceType, j.deviceModel, j.serialNumber, `"${j.problem}"`, j.status, j.estimatedCost, j.receivedDate
@@ -229,7 +228,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `repair_jobs_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `repair_jobs_DCS_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -241,7 +240,7 @@ export default function App() {
     const html = `
       <html>
         <head>
-          <title>Job Receipt - ${job.jobId}</title>
+          <title>Receipt - ${job.jobId}</title>
           <style>
             body { font-family: 'Courier New', monospace; padding: 20px; max-width: 600px; margin: 0 auto; }
             .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 20px; margin-bottom: 20px; }
@@ -296,11 +295,12 @@ export default function App() {
   if (!user) return <div className="flex h-screen items-center justify-center text-gray-500">Connecting to Shop System...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-slate-900 p-4 md:p-8">
+      
       {/* HEADER */}
-      <header className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center">
+      <header className="mb-8 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center">
         <div className="flex flex-col md:flex-row items-center gap-6 mb-4 md:mb-0">
-          {/* LOGO ADDED HERE */}
+          {/* LOGO DISPLAY */}
           <img src="/LOGO.png" alt="Dream Computer Solutions" className="h-24 w-auto object-contain" />
           
           <div className="text-center md:text-left">
@@ -311,37 +311,48 @@ export default function App() {
         </div>
         
         <div className="flex gap-3">
-           <div className="bg-indigo-50 p-3 rounded-lg text-center min-w-[100px]">
-             <p className="text-xs text-indigo-600 font-bold uppercase">Active Jobs</p>
+           <div className="bg-indigo-50 p-3 rounded-lg text-center min-w-[100px] shadow-sm">
+             <p className="text-xs text-indigo-600 font-bold uppercase">Active</p>
              <p className="text-2xl font-bold text-indigo-900">{jobs.filter(j => j.status !== 'Collected').length}</p>
            </div>
-           <div className="bg-green-50 p-3 rounded-lg text-center min-w-[100px]">
-             <p className="text-xs text-green-600 font-bold uppercase">Completed</p>
+           <div className="bg-green-50 p-3 rounded-lg text-center min-w-[100px] shadow-sm">
+             <p className="text-xs text-green-600 font-bold uppercase">Done</p>
              <p className="text-2xl font-bold text-green-900">{jobs.filter(j => j.status === 'Completed').length}</p>
            </div>
         </div>
       </header>
 
       <div className="grid lg:grid-cols-12 gap-8">
+        
+        {/* LEFT: NEW JOB FORM */}
         <div className="lg:col-span-4">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-8">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Plus size={18} /></div>
+          <div className="bg-white rounded-xl shadow-lg shadow-indigo-100 border border-slate-200 p-6 sticky top-8">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+              <div className="p-2 bg-indigo-600 rounded-lg text-white"><Plus size={18} /></div>
               New Repair Job
             </h2>
+            
             <form onSubmit={handleCreateJob} className="space-y-4">
-              <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Customer Details</h3>
-                <input required name="customerName" placeholder="Customer Name" value={formData.customerName} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
+              
+              {/* Customer Info */}
+              <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                   Customer Details
+                </h3>
+                <input required name="customerName" placeholder="Customer Name" value={formData.customerName} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 <div className="grid grid-cols-2 gap-2">
-                  <input required name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                  <input required type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input required name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                  <input required type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 </div>
               </div>
-              <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Device Details</h3>
+
+              {/* Device Info */}
+              <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    Device Details
+                 </h3>
                 <div className="flex gap-2">
-                   <select name="deviceType" value={formData.deviceType} onChange={handleInputChange} className="p-2 text-sm border rounded bg-white">
+                   <select name="deviceType" value={formData.deviceType} onChange={handleInputChange} className="p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
                      <option>Laptop</option>
                      <option>Desktop</option>
                      <option>Phone</option>
@@ -349,52 +360,59 @@ export default function App() {
                      <option>Printer</option>
                      <option>Other</option>
                    </select>
-                   <input required name="deviceModel" placeholder="Model Name" value={formData.deviceModel} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
+                   <input required name="deviceModel" placeholder="Model Name" value={formData.deviceModel} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 </div>
-                <input required name="serialNumber" placeholder="Serial Number / MAC ID" value={formData.serialNumber} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                <textarea required name="problem" placeholder="Problem Description" value={formData.problem} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none h-20 resize-none" />
+                <input required name="serialNumber" placeholder="Serial Number / MAC ID" value={formData.serialNumber} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                <textarea required name="problem" placeholder="Problem Description" value={formData.problem} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none h-20 resize-none placeholder-slate-400" />
               </div>
-               <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Job Details</h3>
+
+              {/* Job Info */}
+               <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Job Details</h3>
                  <div className="flex gap-2">
-                   <input name="estimatedCost" placeholder="Est. Cost (LKR)" value={formData.estimatedCost} onChange={handleInputChange} className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                   <div className="w-full p-2 text-sm bg-gray-100 rounded text-gray-500 cursor-not-allowed">Status: Received</div>
+                   <input name="estimatedCost" placeholder="Est. Cost (LKR)" value={formData.estimatedCost} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                   <div className="w-full p-2 text-sm bg-gray-200 rounded text-gray-600 font-medium text-center cursor-not-allowed">Status: Received</div>
                  </div>
                </div>
+
               <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex justify-center items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95">
-                <Save size={18} /> Create Job & Send Email
+                <Save size={18} /> Create Job & Notify
               </button>
             </form>
           </div>
         </div>
 
+        {/* RIGHT: JOB LIST */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between">
+          
+          {/* Controls */}
+          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 text-slate-400" size={18} />
               <input 
                 placeholder="Search by name, ID, serial..." 
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
               <select 
-                className="border rounded-lg px-3 py-2 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="All">All Statuses</option>
                 {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
-              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700">
+              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 font-medium">
                 <Download size={18} /> <span className="hidden sm:inline">Export CSV</span>
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* List */}
+          <div className="bg-white rounded-xl shadow-lg shadow-indigo-50 border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
@@ -409,13 +427,19 @@ export default function App() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredJobs.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-400">No repair jobs found.</td>
+                      <td colSpan={5} className="p-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center gap-2">
+                          <Wrench size={48} className="text-slate-200" />
+                          <p>No repair jobs found.</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                   {filteredJobs.map(job => {
                     const hasPendingChange = pendingUpdates[job.id] && pendingUpdates[job.id] !== job.status;
+                    
                     return (
-                    <tr key={job.id} className={`hover:bg-slate-50 transition-colors ${hasPendingChange ? 'bg-yellow-50' : ''}`}>
+                    <tr key={job.id} className={`hover:bg-slate-50 transition-colors ${hasPendingChange ? 'bg-amber-50' : ''}`}>
                       <td className="p-4 align-top">
                         <div className="font-bold text-indigo-600 text-sm">{job.jobId}</div>
                         <div className="text-xs text-slate-500 mt-1">{job.receivedDate}</div>
@@ -441,14 +465,16 @@ export default function App() {
                       <td className="p-4 align-top text-center min-w-[180px]">
                         <div className="flex flex-col gap-2 items-center">
                            <StatusBadge status={job.status} />
+                           
                            <div className="flex items-center gap-1 mt-1">
                               <select 
-                                className="text-xs border rounded p-1 max-w-[100px]"
+                                className="text-xs border rounded p-1 max-w-[100px] bg-white"
                                 value={pendingUpdates[job.id] || job.status}
                                 onChange={(e) => handleStatusSelectChange(job.id, e.target.value)}
                               >
                                 {JOB_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
+                              
                               {hasPendingChange && (
                                 <button 
                                   onClick={() => handleCommitUpdate(job)}
@@ -497,6 +523,7 @@ export default function App() {
               <span>Note: Updating status triggers customer email.</span>
             </div>
           </div>
+
         </div>
       </div>
     </div>
