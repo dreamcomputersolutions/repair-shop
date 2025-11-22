@@ -6,7 +6,7 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# Redirect /api/send-email to the actual serverless function
+# This redirects the app's call to the hidden server function
 [[redirects]]
   from = "/api/send-email"
   to = "/.netlify/functions/send-email"
