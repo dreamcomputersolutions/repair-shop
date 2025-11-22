@@ -86,6 +86,9 @@ const generateEmailContent = (job, type) => {
 };
 
 const handleEmailSend = async (job, type) => {
+  // Safety check: If no email is provided, do nothing
+  if (!job.email || job.email.trim() === '') return;
+
   const { subject, body } = generateEmailContent(job, type);
   try {
     const response = await fetch('/api/send-email', {
@@ -178,7 +181,10 @@ export default function App() {
     };
     try {
       await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs'), newJob);
-      if (newJob.email) handleEmailSend(newJob, 'new');
+      // Only attempt to send email if an email address exists
+      if (newJob.email && newJob.email.trim() !== '') {
+        handleEmailSend(newJob, 'new');
+      }
       setFormData(INITIAL_FORM);
       alert(`Job ${newJob.jobId} created successfully!`);
     } catch (err) {
@@ -202,7 +208,10 @@ export default function App() {
         delete next[job.id];
         return next;
       });
-      if (job.email) handleEmailSend({ ...job, status: newStatus }, 'update');
+      // Only attempt to send email if an email address exists
+      if (job.email && job.email.trim() !== '') {
+        handleEmailSend({ ...job, status: newStatus }, 'update');
+      }
     } catch (err) {
       console.error("Error updating status:", err);
       alert("Failed to update status.");
@@ -224,7 +233,7 @@ export default function App() {
       j.jobId, 
       `"${j.customerName}"`, 
       j.phone, 
-      j.email, 
+      j.email || "", 
       j.deviceType, 
       `"${j.deviceBrand || ''}"`, 
       `"${j.deviceModel}"`, 
@@ -250,7 +259,6 @@ export default function App() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return alert("Please allow popups to print.");
     
-    // UPDATED HTML FOR DISCLAIMER AND SIGNATURES
     const html = `
       <html>
         <head>
@@ -266,7 +274,7 @@ export default function App() {
             .label { font-weight: bold; }
             .footer { margin-top: 30px; text-align: center; font-size: 12px; border-top: 1px solid #ddd; padding-top: 10px; }
             
-            /* NEW STYLES FOR DISCLAIMER & SIGNATURES */
+            /* DISCLAIMER & SIGNATURES */
             .disclaimer-box { 
               margin-top: 20px; 
               padding: 10px; 
@@ -406,7 +414,7 @@ export default function App() {
                 <input required name="customerName" placeholder="Customer Name" value={formData.customerName} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 <div className="grid grid-cols-2 gap-2">
                   <input required name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
-                  <input required type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
+                  <input type="email" name="email" placeholder="Email Address (Optional)" value={formData.email} onChange={handleInputChange} className="w-full p-2 text-sm bg-white text-slate-900 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none placeholder-slate-400" />
                 </div>
               </div>
 
