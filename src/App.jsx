@@ -28,21 +28,20 @@ import {
 import { 
   getAuth, 
   signInAnonymously, 
-  onAuthStateChanged,
-  signInWithCustomToken
+  onAuthStateChanged
 } from 'firebase/auth';
 
-// --- 1. PASTE YOUR FIREBASE CONFIG HERE ---
-// Go to Firebase Console -> Project Settings -> General -> Scroll down to "Your apps"
+// --- FIREBASE CONFIGURATION ---
+// Ensure this config matches your Firebase Console settings exactly
 const firebaseConfig = {
   apiKey: "AIzaSyAPNMDf2F1WQUK8Hmupca3OgPUTrmOAgFg",
   authDomain: "job-notes---dream-computers.firebaseapp.com",
   projectId: "job-notes---dream-computers",
   storageBucket: "job-notes---dream-computers.firebasestorage.app",
   messagingSenderId: "643298237132",
-  appId: "1:643298237132:web:336205ab540fc810214069"
+  appId: "1:643298237132:web:336205ab540fc810214069",
+
 };
-// ------------------------------------------
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -139,8 +138,9 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    // Using specific user collection
-    const jobsRef = collection(db, 'artifacts', APP_ID, 'users', user.uid, 'repair_jobs');
+    
+    // UPDATED PATH: Using 'public/data' so data persists across different sessions
+    const jobsRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -175,7 +175,8 @@ export default function App() {
       receivedDate: new Date().toISOString().split('T')[0]
     };
     try {
-      await addDoc(collection(db, 'artifacts', APP_ID, 'users', user.uid, 'repair_jobs'), newJob);
+      // UPDATED PATH: Saving to public data
+      await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs'), newJob);
       if (newJob.email) handleEmailSend(newJob, 'new');
       setFormData(INITIAL_FORM);
       alert(`Job ${newJob.jobId} created successfully!`);
@@ -193,7 +194,8 @@ export default function App() {
     const newStatus = pendingUpdates[job.id];
     if (!newStatus || newStatus === job.status) return;
     try {
-      const jobRef = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'repair_jobs', job.id);
+      // UPDATED PATH: Updating in public data
+      const jobRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs', job.id);
       await updateDoc(jobRef, { status: newStatus });
       setPendingUpdates(prev => {
         const next = { ...prev };
@@ -210,7 +212,8 @@ export default function App() {
   const handleDelete = async (jobId) => {
     if(!window.confirm("Are you sure you want to delete this job record?")) return;
     try {
-      await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', user.uid, 'repair_jobs', jobId));
+      // UPDATED PATH: Deleting from public data
+      await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'repair_jobs', jobId));
     } catch(err) {
       console.error(err);
     }
@@ -242,6 +245,7 @@ export default function App() {
           <style>
             body { font-family: 'Courier New', monospace; padding: 20px; max-width: 600px; margin: 0 auto; }
             .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 20px; margin-bottom: 20px; }
+            .logo { max-height: 80px; display: block; margin: 0 auto 10px; }
             .title { font-size: 24px; font-weight: bold; }
             .motto { font-style: italic; margin: 5px 0; }
             .contacts { font-size: 12px; margin-top: 5px; }
@@ -252,6 +256,7 @@ export default function App() {
         </head>
         <body>
           <div class="header">
+            <img src="${window.location.origin}/LOGO.png" class="logo" alt="Dream Computer Solutions" onerror="this.style.display='none'" />
             <div class="title">Dream Computer Solutions</div>
             <div class="motto">We build your dream.</div>
             <div class="contacts">94 76 987 3327 | +94 474 490 022</div>
@@ -292,12 +297,19 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 p-4 md:p-8">
+      {/* HEADER */}
       <header className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center">
-        <div className="text-center md:text-left mb-4 md:mb-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-indigo-900">Dream Computer Solutions</h1>
-          <p className="text-indigo-600 font-medium italic">We build your dream.</p>
-          <p className="text-sm text-slate-500 mt-1">94 76 987 3327 | +94 474 490 022</p>
+        <div className="flex flex-col md:flex-row items-center gap-6 mb-4 md:mb-0">
+          {/* LOGO ADDED HERE */}
+          <img src="/LOGO.png" alt="Dream Computer Solutions" className="h-24 w-auto object-contain" />
+          
+          <div className="text-center md:text-left">
+            <h1 className="text-2xl md:text-3xl font-bold text-indigo-900">Dream Computer Solutions</h1>
+            <p className="text-indigo-600 font-medium italic">We build your dream.</p>
+            <p className="text-sm text-slate-500 mt-1">94 76 987 3327 | +94 474 490 022</p>
+          </div>
         </div>
+        
         <div className="flex gap-3">
            <div className="bg-indigo-50 p-3 rounded-lg text-center min-w-[100px]">
              <p className="text-xs text-indigo-600 font-bold uppercase">Active Jobs</p>
